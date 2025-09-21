@@ -1,0 +1,300 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - Sistema de Atendimento HUBGEO{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Page Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3 mb-0 text-gray-800">
+            <i class="bi bi-speedometer2"></i> Dashboard
+        </h1>
+        <small class="text-muted">Bem-vindo, {{ current_user.nome }}!</small>
+    </div>
+
+    <!-- Statistics Cards -->
+    <div class="row mb-4">
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card stats-card">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="stats-label text-uppercase mb-1">
+                                Total de Atendimentos
+                            </div>
+                            <div class="stats-number">{{ total_atendimentos }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="bi bi-headset stats-icon"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card stats-card">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="stats-label text-uppercase mb-1">
+                                Atendimentos Hoje
+                            </div>
+                            <div class="stats-number">{{ atendimentos_hoje }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="bi bi-calendar-day stats-icon"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card stats-card">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="stats-label text-uppercase mb-1">
+                                Em Andamento
+                            </div>
+                            <div class="stats-number">{{ atendimentos_em_andamento }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="bi bi-clock stats-icon"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card stats-card">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="stats-label text-uppercase mb-1">
+                                Concluídos
+                            </div>
+                            <div class="stats-number">{{ atendimentos_concluidos }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="bi bi-check-circle stats-icon"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Charts Row -->
+    <div class="row mb-4">
+        <!-- Atendimentos por Produto -->
+        <div class="col-lg-6">
+            <div class="card">
+                <div class="card-header">
+                    <h6 class="m-0 font-weight-bold text-primary">
+                        <i class="bi bi-pie-chart"></i> Atendimentos por Produto (Últimos 30 dias)
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="chart-container">
+                        <canvas id="produtoChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Atendimentos por Dia -->
+        <div class="col-lg-6">
+            <div class="card">
+                <div class="card-header">
+                    <h6 class="m-0 font-weight-bold text-primary">
+                        <i class="bi bi-bar-chart"></i> Atendimentos por Dia (Últimos 7 dias)
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="chart-container">
+                        <canvas id="diaChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Attendance Table -->
+    <div class="row">
+        <div class="col-lg-12">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h6 class="m-0 font-weight-bold text-primary">
+                        <i class="bi bi-list-ul"></i> Atendimentos Recentes
+                    </h6>
+                    <a href="{{ url_for('atendimentos') }}" class="btn btn-primary btn-sm">
+                        <i class="bi bi-eye"></i> Ver Todos
+                    </a>
+                </div>
+                <div class="card-body">
+                    {% if atendimentos_recentes %}
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Cliente</th>
+                                    <th>Produto</th>
+                                    <th>Forma de Contato</th>
+                                    <th>Responsável</th>
+                                    <th>Data/Hora</th>
+                                    <th>Status</th>
+                                    <th>Ações</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for atendimento in atendimentos_recentes %}
+                                <tr>
+                                    <td>
+                                        <strong>{{ atendimento.cliente_nome }}</strong>
+                                        {% if atendimento.cliente_email %}
+                                        <br><small class="text-muted">{{ atendimento.cliente_email }}</small>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-info">{{ atendimento.produto }}</span>
+                                    </td>
+                                    <td>{{ atendimento.forma_contato }}</td>
+                                    <td>{{ atendimento.responsavel.nome }}</td>
+                                    <td>
+                                        {{ atendimento.data_inicio.strftime('%d/%m/%Y') }}<br>
+                                        <small class="text-muted">{{ atendimento.data_inicio.strftime('%H:%M') }}</small>
+                                    </td>
+                                    <td>
+                                        {% if atendimento.status == 'em_andamento' %}
+                                            <span class="badge bg-warning">Em Andamento</span>
+                                        {% elif atendimento.status == 'concluido' %}
+                                            <span class="badge bg-success">Concluído</span>
+                                        {% elif atendimento.status == 'cancelado' %}
+                                            <span class="badge bg-danger">Cancelado</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <a href="{{ url_for('detalhes_atendimento', id=atendimento.id) }}"
+                                           class="btn btn-sm btn-outline-primary">
+                                            <i class="bi bi-eye"></i>
+                                        </a>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="text-center py-4">
+                        <i class="bi bi-inbox display-4 text-muted"></i>
+                        <p class="text-muted mt-3">Nenhum atendimento encontrado</p>
+                        <a href="{{ url_for('novo_atendimento') }}" class="btn btn-primary">
+                            <i class="bi bi-plus-circle"></i> Criar Primeiro Atendimento
+                        </a>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Dados dos gráficos vindos do backend
+const produtoData = {{ atendimentos_por_produto | tojson | safe }};
+const diaData = {{ atendimentos_por_dia | tojson | safe }};
+
+// Gráfico de Pizza - Atendimentos por Produto
+if (produtoData && produtoData.length > 0) {
+    const produtoLabels = produtoData.map(item => item[0]);
+    const produtoValues = produtoData.map(item => item[1]);
+
+    const produtoChart = new Chart(document.getElementById('produtoChart'), {
+        type: 'doughnut',
+        data: {
+            labels: produtoLabels,
+            datasets: [{
+                data: produtoValues,
+                backgroundColor: [
+                    '#148f42',
+                    '#28a745',
+                    '#20c997',
+                    '#17a2b8',
+                    '#007bff'
+                ],
+                borderWidth: 2,
+                borderColor: '#fff'
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'bottom'
+                }
+            }
+        }
+    });
+}
+
+// Gráfico de Barras - Atendimentos por Dia
+if (diaData && diaData.length > 0) {
+    const diaLabels = diaData.map(item => {
+        const date = new Date(item[0]);
+        return date.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
+    });
+    const diaValues = diaData.map(item => item[1]);
+
+    const diaChart = new Chart(document.getElementById('diaChart'), {
+        type: 'bar',
+        data: {
+            labels: diaLabels,
+            datasets: [{
+                label: 'Atendimentos',
+                data: diaValues,
+                backgroundColor: '#148f42',
+                borderColor: '#0f7235',
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        stepSize: 1
+                    }
+                }
+            },
+            plugins: {
+                legend: {
+                    display: false
+                }
+            }
+        }
+    });
+}
+
+// Auto-refresh das estatísticas a cada 30 segundos
+setInterval(function() {
+    fetch('/api/dashboard/stats')
+        .then(response => response.json())
+        .then(data => {
+            // Atualizar os números nas estatísticas
+            document.querySelector('.stats-card:nth-child(1) .stats-number').textContent = data.total_atendimentos;
+            document.querySelector('.stats-card:nth-child(2) .stats-number').textContent = data.atendimentos_hoje;
+            document.querySelector('.stats-card:nth-child(3) .stats-number').textContent = data.em_andamento;
+            document.querySelector('.stats-card:nth-child(4) .stats-number').textContent = data.concluidos;
+        })
+        .catch(error => console.error('Erro ao atualizar estatísticas:', error));
+}, 30000);
+</script>
+{% endblock %}

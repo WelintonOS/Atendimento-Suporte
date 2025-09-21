@@ -1,0 +1,89 @@
+{% extends "base.html" %}
+
+{% block title %}Login - Sistema de Atendimento HUBGEO{% endblock %}
+
+{% block content %}
+<div class="login-container d-flex align-items-center justify-content-center">
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-md-6 col-lg-4">
+                <div class="login-card">
+                    <div class="login-header">
+                        <img src="{{ url_for('static', filename='LogoHUB.png') }}" alt="HUBGEO" height="60" class="mb-3">
+                        <h4 class="mb-0">Sistema de Atendimento</h4>
+                        <p class="mb-0 mt-2 opacity-75">HUBGEO - 30 Anos de Experiência</p>
+                    </div>
+
+                    <div class="login-body">
+                        <form method="POST" action="{{ url_for('auth.login') }}">
+                            <div class="mb-3">
+                                <label for="email" class="form-label">
+                                    <i class="bi bi-envelope"></i> Email
+                                </label>
+                                <input type="email" class="form-control" id="email" name="email" required
+                                       placeholder="seu@email.com" value="{{ request.form.email if request.form.email }}">
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="password" class="form-label">
+                                    <i class="bi bi-lock"></i> Senha
+                                </label>
+                                <input type="password" class="form-control" id="password" name="password" required
+                                       placeholder="Digite sua senha">
+                            </div>
+
+                            <div class="mb-3 form-check">
+                                <input type="checkbox" class="form-check-input" id="remember" name="remember">
+                                <label class="form-check-label" for="remember">
+                                    Lembrar de mim
+                                </label>
+                            </div>
+
+                            <div class="d-grid">
+                                <button type="submit" class="btn btn-primary btn-lg">
+                                    <i class="bi bi-box-arrow-in-right"></i> Entrar
+                                </button>
+                            </div>
+                        </form>
+
+                        <hr class="my-4">
+
+                        <div class="text-center">
+                            <small class="text-muted">
+                                <i class="bi bi-info-circle"></i>
+                                Entre em contato com o administrador para obter acesso
+                            </small>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Informações de login padrão -->
+                <div class="card mt-3 bg-light">
+                    <div class="card-body text-center">
+                        <small class="text-muted">
+                            <strong>Login padrão do administrador:</strong><br>
+                            Email: admin@hubgeo.com<br>
+                            Senha: admin123
+                        </small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+/* Remove navigation for login page */
+.navbar {
+    display: none !important;
+}
+
+footer {
+    display: none !important;
+}
+
+main {
+    margin-top: 0 !important;
+}
+</style>
+{% endblock %}

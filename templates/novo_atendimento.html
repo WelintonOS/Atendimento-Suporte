@@ -1,0 +1,259 @@
+{% extends "base.html" %}
+
+{% block title %}Novo Atendimento - Sistema de Atendimento HUBGEO{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Page Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3 mb-0 text-gray-800">
+            <i class="bi bi-plus-circle"></i> Novo Atendimento
+        </h1>
+        <a href="{{ url_for('atendimentos') }}" class="btn btn-outline-primary">
+            <i class="bi bi-arrow-left"></i> Voltar
+        </a>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-8">
+            <div class="card">
+                <div class="card-header">
+                    <h6 class="m-0 font-weight-bold text-primary">
+                        <i class="bi bi-person-plus"></i> Informações do Atendimento
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <form method="POST" action="{{ url_for('novo_atendimento') }}">
+                        <div class="row">
+                            <!-- Informações do Cliente -->
+                            <div class="col-md-6">
+                                <h6 class="text-primary mb-3">
+                                    <i class="bi bi-person"></i> Dados do Cliente
+                                </h6>
+
+                                <div class="mb-3">
+                                    <label for="cliente_nome" class="form-label">
+                                        Nome do Cliente <span class="text-danger">*</span>
+                                    </label>
+                                    <input type="text" class="form-control" id="cliente_nome" name="cliente_nome" required
+                                           placeholder="Digite o nome completo do cliente"
+                                           value="{{ request.form.cliente_nome if request.form.cliente_nome }}">
+                                </div>
+
+                                <div class="mb-3">
+                                    <label for="cliente_email" class="form-label">
+                                        Email do Cliente
+                                    </label>
+                                    <input type="email" class="form-control" id="cliente_email" name="cliente_email"
+                                           placeholder="cliente@email.com"
+                                           value="{{ request.form.cliente_email if request.form.cliente_email }}">
+                                </div>
+
+                                <div class="mb-3">
+                                    <label for="cliente_contato" class="form-label">
+                                        Telefone/WhatsApp
+                                    </label>
+                                    <input type="text" class="form-control" id="cliente_contato" name="cliente_contato"
+                                           placeholder="(11) 99999-9999"
+                                           value="{{ request.form.cliente_contato if request.form.cliente_contato }}">
+                                </div>
+
+                                <div class="mb-3">
+                                    <label for="forma_contato" class="form-label">
+                                        Forma de Contato <span class="text-danger">*</span>
+                                    </label>
+                                    <select class="form-select" id="forma_contato" name="forma_contato" required>
+                                        <option value="">Selecione a forma de contato</option>
+                                        <option value="Email" {% if request.form.forma_contato == 'Email' %}selected{% endif %}>
+                                            📧 Email
+                                        </option>
+                                        <option value="WhatsApp" {% if request.form.forma_contato == 'WhatsApp' %}selected{% endif %}>
+                                            📱 WhatsApp
+                                        </option>
+                                        <option value="Presencial" {% if request.form.forma_contato == 'Presencial' %}selected{% endif %}>
+                                            🏢 Presencial
+                                        </option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <!-- Informações do Atendimento -->
+                            <div class="col-md-6">
+                                <h6 class="text-primary mb-3">
+                                    <i class="bi bi-gear"></i> Dados do Atendimento
+                                </h6>
+
+                                <div class="mb-3">
+                                    <label for="produto" class="form-label">
+                                        Produto <span class="text-danger">*</span>
+                                    </label>
+                                    <select class="form-select" id="produto" name="produto" required>
+                                        <option value="">Selecione o produto</option>
+                                        <option value="Emlid" {% if request.form.produto == 'Emlid' %}selected{% endif %}>
+                                            📡 Emlid
+                                        </option>
+                                        <option value="Geomax" {% if request.form.produto == 'Geomax' %}selected{% endif %}>
+                                            📐 Geomax
+                                        </option>
+                                        <option value="Posição" {% if request.form.produto == 'Posição' %}selected{% endif %}>
+                                            🗺️ Posição
+                                        </option>
+                                        <option value="GTOPO" {% if request.form.produto == 'GTOPO' %}selected{% endif %}>
+                                            🏔️ GTOPO
+                                        </option>
+                                    </select>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label for="problema" class="form-label">
+                                        Descrição do Problema <span class="text-danger">*</span>
+                                    </label>
+                                    <textarea class="form-control" id="problema" name="problema" rows="8" required
+                                              placeholder="Descreva detalhadamente o problema ou solicitação do cliente...">{{ request.form.problema if request.form.problema }}</textarea>
+                                </div>
+
+                                <!-- Informações do Atendente -->
+                                <div class="alert alert-info">
+                                    <i class="bi bi-info-circle"></i>
+                                    <strong>Responsável:</strong> {{ current_user.nome }}<br>
+                                    <strong>Data/Hora:</strong> <span id="current-datetime"></span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <hr>
+
+                        <div class="d-flex justify-content-end gap-2">
+                            <a href="{{ url_for('atendimentos') }}" class="btn btn-secondary">
+                                <i class="bi bi-x-circle"></i> Cancelar
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-plus-circle"></i> Criar Atendimento
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sidebar com informações -->
+        <div class="col-lg-4">
+            <div class="card">
+                <div class="card-header">
+                    <h6 class="m-0 font-weight-bold text-primary">
+                        <i class="bi bi-lightbulb"></i> Dicas
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <h6 class="text-success">
+                            <i class="bi bi-check-circle"></i> Informações Importantes
+                        </h6>
+                        <ul class="small">
+                            <li>Preencha todos os campos obrigatórios (*)</li>
+                            <li>Seja detalhado na descrição do problema</li>
+                            <li>O atendimento será registrado automaticamente</li>
+                            <li>Você poderá adicionar observações ao finalizar</li>
+                        </ul>
+                    </div>
+
+                    <div class="mb-3">
+                        <h6 class="text-info">
+                            <i class="bi bi-clock"></i> Tempo de Atendimento
+                        </h6>
+                        <p class="small">
+                            O sistema registrará automaticamente o horário de início
+                            e fim do atendimento para controle de tempo.
+                        </p>
+                    </div>
+
+                    <div class="mb-3">
+                        <h6 class="text-warning">
+                            <i class="bi bi-telephone"></i> Produtos Suportados
+                        </h6>
+                        <div class="small">
+                            <div class="badge bg-primary me-1 mb-1">Emlid</div>
+                            <div class="badge bg-primary me-1 mb-1">Geomax</div>
+                            <div class="badge bg-primary me-1 mb-1">Posição</div>
+                            <div class="badge bg-primary me-1 mb-1">GTOPO</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Estatísticas rápidas -->
+            <div class="card mt-3">
+                <div class="card-header">
+                    <h6 class="m-0 font-weight-bold text-primary">
+                        <i class="bi bi-graph-up"></i> Estatísticas Hoje
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="row text-center">
+                        <div class="col-6">
+                            <div class="border-end">
+                                <div class="h4 mb-0 text-primary" id="atendimentos-hoje">-</div>
+                                <small class="text-muted">Atendimentos</small>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="h4 mb-0 text-success" id="em-andamento">-</div>
+                            <small class="text-muted">Em Andamento</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Mostrar data/hora atual
+function updateDateTime() {
+    const now = new Date();
+    const formatted = now.toLocaleDateString('pt-BR') + ' ' + now.toLocaleTimeString('pt-BR', {hour: '2-digit', minute: '2-digit'});
+    document.getElementById('current-datetime').textContent = formatted;
+}
+updateDateTime();
+setInterval(updateDateTime, 1000);
+
+// Máscaras de input
+document.getElementById('cliente_contato').addEventListener('input', function(e) {
+    let value = e.target.value.replace(/\D/g, '');
+    if (value.length >= 10) {
+        value = value.replace(/^(\d{2})(\d{4,5})(\d{4})$/, '($1) $2-$3');
+    }
+    e.target.value = value;
+});
+
+// Carregar estatísticas do dia
+fetch('/api/dashboard/stats')
+    .then(response => response.json())
+    .then(data => {
+        document.getElementById('atendimentos-hoje').textContent = data.atendimentos_hoje;
+        document.getElementById('em-andamento').textContent = data.em_andamento;
+    })
+    .catch(error => console.error('Erro ao carregar estatísticas:', error));
+
+// Validação do formulário
+document.querySelector('form').addEventListener('submit', function(e) {
+    const nome = document.getElementById('cliente_nome').value.trim();
+    const forma = document.getElementById('forma_contato').value;
+    const produto = document.getElementById('produto').value;
+    const problema = document.getElementById('problema').value.trim();
+
+    if (!nome || !forma || !produto || !problema) {
+        e.preventDefault();
+        alert('Por favor, preencha todos os campos obrigatórios.');
+        return false;
+    }
+
+    // Mostrar loading
+    const btn = e.target.querySelector('button[type="submit"]');
+    btn.innerHTML = '<i class="bi bi-hourglass-split"></i> Criando...';
+    btn.disabled = true;
+});
+</script>
+{% endblock %}

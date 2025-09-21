@@ -1,0 +1,275 @@
+{% extends "base.html" %}
+
+{% block title %}Atendimentos - Sistema de Atendimento HUBGEO{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Page Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3 mb-0 text-gray-800">
+            <i class="bi bi-headset"></i> Atendimentos
+        </h1>
+        <a href="{{ url_for('novo_atendimento') }}" class="btn btn-primary">
+            <i class="bi bi-plus-circle"></i> Novo Atendimento
+        </a>
+    </div>
+
+    <!-- Filtros -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <form method="GET" action="{{ url_for('atendimentos') }}" class="row g-3">
+                <div class="col-md-3">
+                    <label for="status" class="form-label">Status</label>
+                    <select class="form-select" id="status" name="status">
+                        <option value="">Todos os Status</option>
+                        <option value="em_andamento" {% if status_filter == 'em_andamento' %}selected{% endif %}>
+                            Em Andamento
+                        </option>
+                        <option value="concluido" {% if status_filter == 'concluido' %}selected{% endif %}>
+                            Concluído
+                        </option>
+                        <option value="cancelado" {% if status_filter == 'cancelado' %}selected{% endif %}>
+                            Cancelado
+                        </option>
+                    </select>
+                </div>
+
+                <div class="col-md-3">
+                    <label for="produto" class="form-label">Produto</label>
+                    <select class="form-select" id="produto" name="produto">
+                        <option value="">Todos os Produtos</option>
+                        <option value="Emlid" {% if produto_filter == 'Emlid' %}selected{% endif %}>Emlid</option>
+                        <option value="Geomax" {% if produto_filter == 'Geomax' %}selected{% endif %}>Geomax</option>
+                        <option value="Posição" {% if produto_filter == 'Posição' %}selected{% endif %}>Posição</option>
+                        <option value="GTOPO" {% if produto_filter == 'GTOPO' %}selected{% endif %}>GTOPO</option>
+                    </select>
+                </div>
+
+                <div class="col-md-3 d-flex align-items-end">
+                    <button type="submit" class="btn btn-outline-primary me-2">
+                        <i class="bi bi-search"></i> Filtrar
+                    </button>
+                    <a href="{{ url_for('atendimentos') }}" class="btn btn-outline-secondary">
+                        <i class="bi bi-x-circle"></i> Limpar
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Tabela de Atendimentos -->
+    <div class="card">
+        <div class="card-body">
+            {% if atendimentos.items %}
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead class="table-light">
+                        <tr>
+                            <th>ID</th>
+                            <th>Cliente</th>
+                            <th>Produto</th>
+                            <th>Forma de Contato</th>
+                            <th>Responsável</th>
+                            <th>Data/Hora Início</th>
+                            <th>Duração</th>
+                            <th>Status</th>
+                            <th>Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for atendimento in atendimentos.items %}
+                        <tr>
+                            <td>
+                                <strong>#{{ atendimento.id }}</strong>
+                            </td>
+                            <td>
+                                <div>
+                                    <strong>{{ atendimento.cliente_nome }}</strong>
+                                    {% if atendimento.cliente_email %}
+                                    <br><small class="text-muted">
+                                        <i class="bi bi-envelope"></i> {{ atendimento.cliente_email }}
+                                    </small>
+                                    {% endif %}
+                                    {% if atendimento.cliente_contato %}
+                                    <br><small class="text-muted">
+                                        <i class="bi bi-telephone"></i> {{ atendimento.cliente_contato }}
+                                    </small>
+                                    {% endif %}
+                                </div>
+                            </td>
+                            <td>
+                                <span class="badge bg-info">{{ atendimento.produto }}</span>
+                            </td>
+                            <td>
+                                {% if atendimento.forma_contato == 'Email' %}
+                                    <i class="bi bi-envelope text-primary"></i> Email
+                                {% elif atendimento.forma_contato == 'WhatsApp' %}
+                                    <i class="bi bi-whatsapp text-success"></i> WhatsApp
+                                {% elif atendimento.forma_contato == 'Presencial' %}
+                                    <i class="bi bi-person text-info"></i> Presencial
+                                {% endif %}
+                            </td>
+                            <td>{{ atendimento.responsavel.nome }}</td>
+                            <td>
+                                <div>
+                                    {{ atendimento.data_inicio.strftime('%d/%m/%Y') }}
+                                    <br><small class="text-muted">{{ atendimento.data_inicio.strftime('%H:%M') }}</small>
+                                </div>
+                            </td>
+                            <td>
+                                <span class="badge {% if atendimento.status == 'em_andamento' %}bg-warning{% else %}bg-secondary{% endif %}">
+                                    {{ atendimento.duracao }}
+                                </span>
+                            </td>
+                            <td>
+                                {% if atendimento.status == 'em_andamento' %}
+                                    <span class="badge bg-warning">
+                                        <i class="bi bi-clock"></i> Em Andamento
+                                    </span>
+                                {% elif atendimento.status == 'concluido' %}
+                                    <span class="badge bg-success">
+                                        <i class="bi bi-check-circle"></i> Concluído
+                                    </span>
+                                {% elif atendimento.status == 'cancelado' %}
+                                    <span class="badge bg-danger">
+                                        <i class="bi bi-x-circle"></i> Cancelado
+                                    </span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <div class="btn-group" role="group">
+                                    <a href="{{ url_for('detalhes_atendimento', id=atendimento.id) }}"
+                                       class="btn btn-sm btn-outline-primary" title="Ver Detalhes">
+                                        <i class="bi bi-eye"></i>
+                                    </a>
+                                    {% if atendimento.status == 'em_andamento' %}
+                                    <button type="button" class="btn btn-sm btn-outline-success"
+                                            onclick="finalizarAtendimento({{ atendimento.id }})" title="Finalizar">
+                                        <i class="bi bi-check-circle"></i>
+                                    </button>
+                                    {% endif %}
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Paginação -->
+            {% if atendimentos.pages > 1 %}
+            <nav aria-label="Navegação de páginas" class="mt-4">
+                <ul class="pagination justify-content-center">
+                    {% if atendimentos.has_prev %}
+                    <li class="page-item">
+                        <a class="page-link" href="{{ url_for('atendimentos', page=atendimentos.prev_num, status=status_filter, produto=produto_filter) }}">
+                            <i class="bi bi-chevron-left"></i> Anterior
+                        </a>
+                    </li>
+                    {% endif %}
+
+                    {% for page_num in atendimentos.iter_pages() %}
+                        {% if page_num %}
+                            {% if page_num != atendimentos.page %}
+                            <li class="page-item">
+                                <a class="page-link" href="{{ url_for('atendimentos', page=page_num, status=status_filter, produto=produto_filter) }}">
+                                    {{ page_num }}
+                                </a>
+                            </li>
+                            {% else %}
+                            <li class="page-item active">
+                                <span class="page-link">{{ page_num }}</span>
+                            </li>
+                            {% endif %}
+                        {% else %}
+                        <li class="page-item disabled">
+                            <span class="page-link">…</span>
+                        </li>
+                        {% endif %}
+                    {% endfor %}
+
+                    {% if atendimentos.has_next %}
+                    <li class="page-item">
+                        <a class="page-link" href="{{ url_for('atendimentos', page=atendimentos.next_num, status=status_filter, produto=produto_filter) }}">
+                            Próxima <i class="bi bi-chevron-right"></i>
+                        </a>
+                    </li>
+                    {% endif %}
+                </ul>
+            </nav>
+            {% endif %}
+
+            {% else %}
+            <!-- Estado vazio -->
+            <div class="text-center py-5">
+                <i class="bi bi-inbox display-1 text-muted"></i>
+                <h4 class="mt-3 text-muted">Nenhum atendimento encontrado</h4>
+                <p class="text-muted">
+                    {% if status_filter or produto_filter %}
+                    Nenhum atendimento corresponde aos filtros selecionados.
+                    <br><a href="{{ url_for('atendimentos') }}" class="btn btn-outline-primary mt-2">
+                        <i class="bi bi-x-circle"></i> Limpar Filtros
+                    </a>
+                    {% else %}
+                    Comece criando seu primeiro atendimento.
+                    <br><a href="{{ url_for('novo_atendimento') }}" class="btn btn-primary mt-2">
+                        <i class="bi bi-plus-circle"></i> Criar Primeiro Atendimento
+                    </a>
+                    {% endif %}
+                </p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Modal para finalizar atendimento -->
+<div class="modal fade" id="finalizarModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="bi bi-check-circle"></i> Finalizar Atendimento
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="finalizarForm" method="POST">
+                <div class="modal-body">
+                    <p>Tem certeza que deseja finalizar este atendimento?</p>
+                    <div class="mb-3">
+                        <label for="observacoes" class="form-label">Observações finais (opcional)</label>
+                        <textarea class="form-control" id="observacoes" name="observacoes" rows="3"
+                                  placeholder="Adicione observações sobre a resolução do problema..."></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <i class="bi bi-x-circle"></i> Cancelar
+                    </button>
+                    <button type="submit" class="btn btn-success">
+                        <i class="bi bi-check-circle"></i> Finalizar Atendimento
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function finalizarAtendimento(id) {
+    const modal = new bootstrap.Modal(document.getElementById('finalizarModal'));
+    const form = document.getElementById('finalizarForm');
+    form.action = `/atendimentos/${id}/finalizar`;
+    modal.show();
+}
+
+// Auto-refresh da página a cada 60 segundos para atualizar status
+setInterval(function() {
+    if (document.visibilityState === 'visible') {
+        location.reload();
+    }
+}, 60000);
+</script>
+{% endblock %}
