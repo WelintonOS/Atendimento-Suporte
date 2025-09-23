@@ -1,0 +1,228 @@
+{% extends "base.html" %}
+
+{% block title %}Configurações - Sistema de Atendimento HUBGEO{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Page Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3 mb-0 text-gray-800">
+            <i class="bi bi-gear"></i> Configurações
+        </h1>
+    </div>
+
+    <div class="row">
+        <!-- Foto de Perfil -->
+        <div class="col-lg-4">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h6 class="m-0 font-weight-bold text-primary">
+                        <i class="bi bi-person-circle"></i> Foto de Perfil
+                    </h6>
+                </div>
+                <div class="card-body text-center">
+                    <div class="mb-3">
+                        {% if current_user.foto_perfil %}
+                            <img src="{{ current_user.foto_perfil }}" alt="Foto de Perfil"
+                                 class="rounded-circle img-thumbnail" style="width: 150px; height: 150px; object-fit: cover;">
+                        {% else %}
+                            <div class="rounded-circle bg-light d-flex align-items-center justify-content-center mx-auto"
+                                 style="width: 150px; height: 150px;">
+                                <i class="bi bi-person-circle text-muted" style="font-size: 80px;"></i>
+                            </div>
+                        {% endif %}
+                    </div>
+
+                    <form method="POST" enctype="multipart/form-data" class="mb-3">
+                        <div class="mb-3">
+                            <input type="file" class="form-control" name="foto_perfil" accept=".jpg,.jpeg,.png"
+                                   onchange="previewImage(this)">
+                            <div class="form-text">
+                                Formatos aceitos: JPG, JPEG, PNG<br>
+                                Tamanho máximo: 2MB<br>
+                                A imagem será redimensionada para 150x150 pixels
+                            </div>
+                        </div>
+                        <button type="submit" class="btn btn-primary btn-sm">
+                            <i class="bi bi-upload"></i> Atualizar Foto
+                        </button>
+                    </form>
+
+                    {% if current_user.foto_perfil %}
+                    <form method="POST" action="{{ url_for('remover_foto') }}" class="d-inline">
+                        <button type="submit" class="btn btn-outline-danger btn-sm"
+                                onclick="return confirm('Tem certeza que deseja remover sua foto?')">
+                            <i class="bi bi-trash"></i> Remover Foto
+                        </button>
+                    </form>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Informações da Conta -->
+            <div class="card">
+                <div class="card-header">
+                    <h6 class="m-0 font-weight-bold text-primary">
+                        <i class="bi bi-info-circle"></i> Informações da Conta
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <label class="form-label text-muted">Nome:</label>
+                        <div class="fw-bold">{{ current_user.nome }}</div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label text-muted">Email:</label>
+                        <div class="fw-bold">{{ current_user.email }}</div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label text-muted">Perfil:</label>
+                        <div>
+                            {% if current_user.role == 'admin' %}
+                                <span class="badge bg-danger">Administrador</span>
+                            {% else %}
+                                <span class="badge bg-primary">Atendente</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label text-muted">Membro desde:</label>
+                        <div>{{ current_user.data_criacao.strftime('%d/%m/%Y') }}</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Alterar Senha -->
+        <div class="col-lg-8">
+            <div class="card">
+                <div class="card-header">
+                    <h6 class="m-0 font-weight-bold text-primary">
+                        <i class="bi bi-shield-lock"></i> Alterar Senha
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <form method="POST" class="needs-validation" novalidate>
+                        <div class="row">
+                            <div class="col-md-12">
+                                <div class="mb-3">
+                                    <label for="senha_atual" class="form-label">
+                                        Senha Atual <span class="text-danger">*</span>
+                                    </label>
+                                    <input type="password" class="form-control" id="senha_atual"
+                                           name="senha_atual" required>
+                                    <div class="invalid-feedback">
+                                        Por favor, informe sua senha atual.
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="nova_senha" class="form-label">
+                                        Nova Senha <span class="text-danger">*</span>
+                                    </label>
+                                    <input type="password" class="form-control" id="nova_senha"
+                                           name="nova_senha" minlength="6" required>
+                                    <div class="invalid-feedback">
+                                        A senha deve ter pelo menos 6 caracteres.
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="confirmar_senha" class="form-label">
+                                        Confirmar Nova Senha <span class="text-danger">*</span>
+                                    </label>
+                                    <input type="password" class="form-control" id="confirmar_senha"
+                                           name="confirmar_senha" minlength="6" required>
+                                    <div class="invalid-feedback">
+                                        Por favor, confirme sua nova senha.
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="alert alert-info">
+                            <i class="bi bi-info-circle"></i>
+                            <strong>Dicas de segurança:</strong>
+                            <ul class="mb-0 mt-2">
+                                <li>Use pelo menos 6 caracteres</li>
+                                <li>Combine letras maiúsculas e minúsculas</li>
+                                <li>Inclua números e símbolos quando possível</li>
+                                <li>Não use senhas óbvias como "123456" ou seu nome</li>
+                            </ul>
+                        </div>
+
+                        <div class="d-flex justify-content-between">
+                            <a href="{{ url_for('dashboard') }}" class="btn btn-outline-secondary">
+                                <i class="bi bi-arrow-left"></i> Voltar
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-shield-check"></i> Atualizar Senha
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Preview da imagem antes do upload
+function previewImage(input) {
+    if (input.files && input.files[0]) {
+        const file = input.files[0];
+
+        // Verificar tamanho
+        if (file.size > 2 * 1024 * 1024) {
+            alert('A imagem deve ter no máximo 2MB.');
+            input.value = '';
+            return;
+        }
+
+        // Verificar tipo
+        if (!file.type.match('image/(jpeg|jpg|png)')) {
+            alert('Apenas arquivos JPG, JPEG e PNG são permitidos.');
+            input.value = '';
+            return;
+        }
+
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const img = document.querySelector('.card img, .rounded-circle');
+            if (img) {
+                img.src = e.target.result;
+            }
+        };
+        reader.readAsDataURL(file);
+    }
+}
+
+// Validação de confirmação de senha
+document.getElementById('confirmar_senha').addEventListener('input', function() {
+    const novaSenha = document.getElementById('nova_senha').value;
+    const confirmarSenha = this.value;
+
+    if (novaSenha !== confirmarSenha) {
+        this.setCustomValidity('As senhas não coincidem.');
+    } else {
+        this.setCustomValidity('');
+    }
+});
+
+document.getElementById('nova_senha').addEventListener('input', function() {
+    const confirmarSenha = document.getElementById('confirmar_senha');
+    if (confirmarSenha.value && this.value !== confirmarSenha.value) {
+        confirmarSenha.setCustomValidity('As senhas não coincidem.');
+    } else {
+        confirmarSenha.setCustomValidity('');
+    }
+});
+</script>
+{% endblock %}
