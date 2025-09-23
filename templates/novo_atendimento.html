@@ -89,18 +89,33 @@
                                     </label>
                                     <select class="form-select" id="produto" name="produto" required>
                                         <option value="">Selecione o produto</option>
-                                        <option value="Emlid" {% if request.form.produto == 'Emlid' %}selected{% endif %}>
-                                            📡 Emlid
-                                        </option>
-                                        <option value="Geomax" {% if request.form.produto == 'Geomax' %}selected{% endif %}>
-                                            📐 Geomax
-                                        </option>
-                                        <option value="Posição" {% if request.form.produto == 'Posição' %}selected{% endif %}>
-                                            🗺️ Posição
-                                        </option>
-                                        <option value="GTOPO" {% if request.form.produto == 'GTOPO' %}selected{% endif %}>
-                                            🏔️ GTOPO
-                                        </option>
+                                        <option value="Acessórios" {% if request.form.produto == 'Acessórios' %}selected{% endif %}>Acessórios</option>
+                                        <option value="Controladoras" {% if request.form.produto == 'Controladoras' %}selected{% endif %}>Controladoras</option>
+                                        <option value="Drones" {% if request.form.produto == 'Drones' %}selected{% endif %}>Drones</option>
+                                        <option value="Estação Total" {% if request.form.produto == 'Estação Total' %}selected{% endif %}>Estação Total</option>
+                                        <option value="GNSS" {% if request.form.produto == 'GNSS' %}selected{% endif %}>GNSS</option>
+                                        <option value="Nível" {% if request.form.produto == 'Nível' %}selected{% endif %}>Nível</option>
+                                        <option value="Rádio" {% if request.form.produto == 'Rádio' %}selected{% endif %}>Rádio</option>
+                                        <option value="Software" {% if request.form.produto == 'Software' %}selected{% endif %}>Software</option>
+                                        <option value="Teodolito" {% if request.form.produto == 'Teodolito' %}selected{% endif %}>Teodolito</option>
+                                        <option value="Outros" {% if request.form.produto == 'Outros' %}selected{% endif %}>Outros</option>
+                                    </select>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label for="marca" class="form-label">
+                                        Marca
+                                    </label>
+                                    <select class="form-select" id="marca" name="marca">
+                                        <option value="">Selecione a marca</option>
+                                        <option value="Autel" {% if request.form.marca == 'Autel' %}selected{% endif %}>Autel</option>
+                                        <option value="CHCNAV" {% if request.form.marca == 'CHCNAV' %}selected{% endif %}>CHCNAV</option>
+                                        <option value="DJI" {% if request.form.marca == 'DJI' %}selected{% endif %}>DJI</option>
+                                        <option value="Emlid" {% if request.form.marca == 'Emlid' %}selected{% endif %}>Emlid</option>
+                                        <option value="Geomax" {% if request.form.marca == 'Geomax' %}selected{% endif %}>Geomax</option>
+                                        <option value="Leica" {% if request.form.marca == 'Leica' %}selected{% endif %}>Leica</option>
+                                        <option value="Sanding" {% if request.form.marca == 'Sanding' %}selected{% endif %}>Sanding</option>
+                                        <option value="Outras" {% if request.form.marca == 'Outras' %}selected{% endif %}>Outras</option>
                                     </select>
                                 </div>
 

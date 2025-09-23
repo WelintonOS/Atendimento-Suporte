@@ -14,9 +14,14 @@
                 <i class="bi bi-arrow-left"></i> Voltar
             </a>
             {% if atendimento.status == 'em_andamento' %}
-            <button type="button" class="btn btn-success" onclick="finalizarAtendimento({{ atendimento.id }})">
-                <i class="bi bi-check-circle"></i> Finalizar Atendimento
-            </button>
+                {% if atendimento.usuario_id == current_user.id %}
+                <button type="button" class="btn btn-warning me-2" onclick="transferirAtendimento({{ atendimento.id }})">
+                    <i class="bi bi-arrow-right-circle"></i> Transferir
+                </button>
+                <button type="button" class="btn btn-success" onclick="finalizarAtendimento({{ atendimento.id }})">
+                    <i class="bi bi-check-circle"></i> Finalizar Atendimento
+                </button>
+                {% endif %}
             {% endif %}
         </div>
     </div>
@@ -102,6 +107,9 @@
                                 <label class="form-label text-muted">Produto:</label>
                                 <div>
                                     <span class="badge bg-info fs-6">{{ atendimento.produto }}</span>
+                                    {% if atendimento.marca %}
+                                        <br><span class="text-muted">Marca: {{ atendimento.marca }}</span>
+                                    {% endif %}
                                 </div>
                             </div>
 
@@ -285,6 +293,50 @@
     </div>
 </div>
 
+<!-- Modal para transferir atendimento -->
+<div class="modal fade" id="transferirModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="bi bi-arrow-right-circle"></i> Transferir Atendimento
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="transferirForm" method="POST">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="novo_responsavel_id" class="form-label">Novo Responsável <span class="text-danger">*</span></label>
+                        <select class="form-select" id="novo_responsavel_id" name="novo_responsavel_id" required>
+                            <option value="">Selecione o novo responsável</option>
+                            {% for usuario in usuarios %}
+                            <option value="{{ usuario.id }}">{{ usuario.nome }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="motivo" class="form-label">Motivo da transferência (opcional)</label>
+                        <textarea class="form-control" id="motivo" name="motivo" rows="3"
+                                  placeholder="Descreva o motivo da transferência (especialização, disponibilidade, etc.)"></textarea>
+                    </div>
+                    <div class="alert alert-info">
+                        <i class="bi bi-info-circle"></i>
+                        <strong>Atenção:</strong> O novo responsável receberá uma notificação sobre a transferência e o histórico será registrado.
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <i class="bi bi-x-circle"></i> Cancelar
+                    </button>
+                    <button type="submit" class="btn btn-warning">
+                        <i class="bi bi-arrow-right-circle"></i> Transferir Atendimento
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
 <!-- Modal para finalizar atendimento -->
 <div class="modal fade" id="finalizarModal" tabindex="-1">
     <div class="modal-dialog">
@@ -344,6 +396,13 @@
 
 {% block extra_js %}
 <script>
+function transferirAtendimento(id) {
+    const modal = new bootstrap.Modal(document.getElementById('transferirModal'));
+    const form = document.getElementById('transferirForm');
+    form.action = `/atendimentos/${id}/transferir`;
+    modal.show();
+}
+
 function finalizarAtendimento(id) {
     const modal = new bootstrap.Modal(document.getElementById('finalizarModal'));
     const form = document.getElementById('finalizarForm');

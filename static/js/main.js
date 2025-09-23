@@ -342,9 +342,102 @@ function checkNetworkStatus() {
 // Inicializar verificação de rede
 checkNetworkStatus();
 
+// Sistema de Notificações
+const NotificationSystem = {
+    init: function() {
+        this.loadNotifications();
+        this.setupEventListeners();
+
+        // Atualizar notificações a cada 30 segundos
+        setInterval(() => this.loadNotifications(), 30000);
+    },
+
+    loadNotifications: function() {
+        fetch('/api/notificacoes')
+            .then(response => response.json())
+            .then(data => {
+                this.updateNotificationUI(data);
+            })
+            .catch(error => {
+                console.error('Erro ao carregar notificações:', error);
+            });
+    },
+
+    updateNotificationUI: function(data) {
+        const contador = document.getElementById('contadorNotificacoes');
+        const lista = document.getElementById('listaNotificacoes');
+
+        if (data.total_nao_lidas > 0) {
+            contador.textContent = data.total_nao_lidas;
+            contador.style.display = 'block';
+        } else {
+            contador.style.display = 'none';
+        }
+
+        // Limpar lista atual
+        lista.innerHTML = '';
+
+        if (data.notificacoes.length === 0) {
+            lista.innerHTML = '<li><span class="dropdown-item-text text-muted">Nenhuma notificação</span></li>';
+        } else {
+            data.notificacoes.forEach(notif => {
+                const item = document.createElement('li');
+                item.innerHTML = `
+                    <a class="dropdown-item notification-item" href="#" onclick="NotificationSystem.markAsRead(${notif.id}, ${notif.atendimento_id})">
+                        <div class="d-flex w-100 justify-content-between">
+                            <strong class="mb-1">${notif.titulo}</strong>
+                            <small>${notif.data_criacao}</small>
+                        </div>
+                        <p class="mb-1 text-muted">${notif.mensagem}</p>
+                        <small class="text-primary">Clique para ver o atendimento</small>
+                    </a>
+                `;
+                lista.appendChild(item);
+            });
+        }
+    },
+
+    markAsRead: function(notificationId, atendimentoId) {
+        fetch(`/notificacoes/${notificationId}/marcar-lida`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Redirecionar para o atendimento
+                window.location.href = `/atendimentos/${atendimentoId}`;
+            }
+        })
+        .catch(error => {
+            console.error('Erro ao marcar notificação como lida:', error);
+        });
+    },
+
+    setupEventListeners: function() {
+        // Atualizar notificações quando dropdown é aberto
+        const dropdown = document.getElementById('notificacoesDropdown');
+        if (dropdown) {
+            dropdown.addEventListener('click', () => {
+                setTimeout(() => this.loadNotifications(), 100);
+            });
+        }
+    }
+};
+
+// Inicializar sistema de notificações quando página carrega
+document.addEventListener('DOMContentLoaded', function() {
+    if (document.getElementById('notificacoesDropdown')) {
+        NotificationSystem.init();
+    }
+});
+
 // Exportar funções úteis globalmente
 window.HubGeo = {
     Utils: Utils,
     confirmAction: confirmAction,
-    enableAutoSave: enableAutoSave
+    enableAutoSave: enableAutoSave,
+    NotificationSystem: NotificationSystem
 };

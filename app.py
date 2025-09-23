@@ -1,10 +1,13 @@
 from flask import Flask, render_template, request, redirect, url_for, flash, jsonify
 from flask_login import LoginManager, login_required, current_user
-from models import db, Usuario, Atendimento, LogAtendimento
+from models import db, Usuario, Atendimento, LogAtendimento, Notificacao
 from auth import auth_bp, admin_required
 from datetime import datetime, timedelta
 from sqlalchemy import func, desc, and_
 import os
+import base64
+from PIL import Image
+from io import BytesIO
 
 app = Flask(__name__, static_folder='static', static_url_path='/static')
 app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'hubgeo-sistema-atendimento-2024-secret-key-production')
@@ -96,6 +99,8 @@ def atendimentos():
     page = request.args.get('page', 1, type=int)
     status_filter = request.args.get('status', '')
     produto_filter = request.args.get('produto', '')
+    marca_filter = request.args.get('marca', '')
+    usuario_filter = request.args.get('usuario', '', type=str)
 
     query = Atendimento.query
 
@@ -103,13 +108,21 @@ def atendimentos():
         query = query.filter_by(status=status_filter)
     if produto_filter:
         query = query.filter_by(produto=produto_filter)
+    if marca_filter:
+        query = query.filter_by(marca=marca_filter)
+    if usuario_filter:
+        query = query.filter_by(usuario_id=usuario_filter)
 
     atendimentos = query.order_by(desc(Atendimento.data_inicio)).paginate(
         page=page, per_page=10, error_out=False
     )
 
+    # Buscar todos os usuários para o filtro
+    usuarios = Usuario.query.filter_by(ativo=True).all()
+
     return render_template('atendimentos.html', atendimentos=atendimentos,
-                         status_filter=status_filter, produto_filter=produto_filter)
+                         status_filter=status_filter, produto_filter=produto_filter,
+                         marca_filter=marca_filter, usuario_filter=usuario_filter, usuarios=usuarios)
 
 @app.route('/atendimentos/novo', methods=['GET', 'POST'])
 @login_required
@@ -122,6 +135,7 @@ def novo_atendimento():
                 cliente_contato=request.form.get('cliente_contato', ''),
                 forma_contato=request.form['forma_contato'],
                 produto=request.form['produto'],
+                marca=request.form.get('marca', ''),
                 problema=request.form['problema'],
                 usuario_id=current_user.id
             )
@@ -152,12 +166,26 @@ def novo_atendimento():
 def detalhes_atendimento(id):
     atendimento = Atendimento.query.get_or_404(id)
     logs = LogAtendimento.query.filter_by(atendimento_id=id).order_by(LogAtendimento.timestamp).all()
-    return render_template('detalhes_atendimento.html', atendimento=atendimento, logs=logs)
+
+    # Buscar usuários ativos para transferência (exceto o atual responsável)
+    usuarios = Usuario.query.filter(
+        and_(Usuario.ativo == True, Usuario.id != atendimento.usuario_id)
+    ).all()
+
+    return render_template('detalhes_atendimento.html',
+                         atendimento=atendimento,
+                         logs=logs,
+                         usuarios=usuarios)
 
 @app.route('/atendimentos/<int:id>/finalizar', methods=['POST'])
 @login_required
 def finalizar_atendimento(id):
     atendimento = Atendimento.query.get_or_404(id)
+
+    # Verificar se o usuário atual é o responsável pelo atendimento
+    if atendimento.usuario_id != current_user.id:
+        flash('Apenas o responsável que criou este atendimento pode finalizá-lo.', 'error')
+        return redirect(url_for('detalhes_atendimento', id=id))
 
     if atendimento.status == 'concluido':
         flash('Este atendimento já foi finalizado.', 'warning')
@@ -179,6 +207,84 @@ def finalizar_atendimento(id):
     flash('Atendimento finalizado com sucesso!', 'success')
     return redirect(url_for('detalhes_atendimento', id=id))
 
+@app.route('/atendimentos/<int:id>/transferir', methods=['POST'])
+@login_required
+def transferir_atendimento(id):
+    atendimento = Atendimento.query.get_or_404(id)
+
+    # Verificar se o usuário atual é o responsável pelo atendimento
+    if atendimento.usuario_id != current_user.id:
+        flash('Apenas o responsável atual pode transferir este atendimento.', 'error')
+        return redirect(url_for('detalhes_atendimento', id=id))
+
+    # Verificar se o atendimento está em andamento
+    if atendimento.status != 'em_andamento':
+        flash('Apenas atendimentos em andamento podem ser transferidos.', 'warning')
+        return redirect(url_for('detalhes_atendimento', id=id))
+
+    novo_responsavel_id = request.form.get('novo_responsavel_id')
+    motivo = request.form.get('motivo', '')
+
+    if not novo_responsavel_id:
+        flash('Selecione um responsável para transferir o atendimento.', 'error')
+        return redirect(url_for('detalhes_atendimento', id=id))
+
+    # Verificar se o novo responsável existe e está ativo
+    novo_responsavel = Usuario.query.filter_by(id=novo_responsavel_id, ativo=True).first()
+    if not novo_responsavel:
+        flash('Usuário selecionado não encontrado ou inativo.', 'error')
+        return redirect(url_for('detalhes_atendimento', id=id))
+
+    # Transferir o atendimento
+    try:
+        atendimento.transferir_para(novo_responsavel_id, current_user, motivo)
+        db.session.commit()
+        flash(f'Atendimento transferido com sucesso para {novo_responsavel.nome}!', 'success')
+    except Exception as e:
+        db.session.rollback()
+        flash('Erro ao transferir atendimento. Tente novamente.', 'error')
+
+    return redirect(url_for('detalhes_atendimento', id=id))
+
+@app.route('/api/notificacoes')
+@login_required
+def api_notificacoes():
+    """API para buscar notificações do usuário atual"""
+    notificacoes = Notificacao.query.filter_by(
+        usuario_id=current_user.id,
+        lida=False
+    ).order_by(desc(Notificacao.data_criacao)).limit(10).all()
+
+    notificacoes_json = []
+    for notif in notificacoes:
+        notificacoes_json.append({
+            'id': notif.id,
+            'tipo': notif.tipo,
+            'titulo': notif.titulo,
+            'mensagem': notif.mensagem,
+            'data_criacao': notif.data_criacao.strftime('%d/%m/%Y %H:%M'),
+            'atendimento_id': notif.atendimento_id
+        })
+
+    return jsonify({
+        'notificacoes': notificacoes_json,
+        'total_nao_lidas': len(notificacoes_json)
+    })
+
+@app.route('/notificacoes/<int:id>/marcar-lida', methods=['POST'])
+@login_required
+def marcar_notificacao_lida(id):
+    """Marca uma notificação como lida"""
+    notificacao = Notificacao.query.filter_by(
+        id=id,
+        usuario_id=current_user.id
+    ).first_or_404()
+
+    notificacao.lida = True
+    db.session.commit()
+
+    return jsonify({'success': True})
+
 @app.route('/api/dashboard/stats')
 @login_required
 def api_dashboard_stats():
@@ -192,6 +298,100 @@ def api_dashboard_stats():
         'concluidos': Atendimento.query.filter_by(status='concluido').count()
     }
     return jsonify(stats)
+
+@app.route('/configuracoes', methods=['GET', 'POST'])
+@login_required
+def configuracoes():
+    """Página de configurações do usuário"""
+    if request.method == 'POST':
+        try:
+            # Atualizar senha se fornecida
+            senha_atual = request.form.get('senha_atual')
+            nova_senha = request.form.get('nova_senha')
+            confirmar_senha = request.form.get('confirmar_senha')
+
+            if senha_atual and nova_senha:
+                # Verificar senha atual
+                if not current_user.check_password(senha_atual):
+                    flash('Senha atual incorreta.', 'error')
+                    return redirect(url_for('configuracoes'))
+
+                # Verificar se as senhas coincidem
+                if nova_senha != confirmar_senha:
+                    flash('As senhas não coincidem.', 'error')
+                    return redirect(url_for('configuracoes'))
+
+                # Verificar comprimento mínimo
+                if len(nova_senha) < 6:
+                    flash('A nova senha deve ter pelo menos 6 caracteres.', 'error')
+                    return redirect(url_for('configuracoes'))
+
+                # Atualizar senha
+                current_user.set_password(nova_senha)
+
+            # Atualizar foto se fornecida
+            foto = request.files.get('foto_perfil')
+            if foto and foto.filename:
+                # Verificar tipo de arquivo
+                if not foto.filename.lower().endswith(('.png', '.jpg', '.jpeg')):
+                    flash('Apenas arquivos PNG, JPG e JPEG são permitidos.', 'error')
+                    return redirect(url_for('configuracoes'))
+
+                # Verificar tamanho (máximo 2MB)
+                foto.seek(0, os.SEEK_END)
+                file_length = foto.tell()
+                foto.seek(0)
+
+                if file_length > 2 * 1024 * 1024:  # 2MB
+                    flash('A imagem deve ter no máximo 2MB.', 'error')
+                    return redirect(url_for('configuracoes'))
+
+                # Redimensionar e converter para base64
+                try:
+                    image = Image.open(foto)
+                    # Redimensionar para 150x150 mantendo proporção
+                    image.thumbnail((150, 150), Image.Resampling.LANCZOS)
+
+                    # Converter para RGB se necessário
+                    if image.mode != 'RGB':
+                        image = image.convert('RGB')
+
+                    # Salvar em buffer como JPEG
+                    buffer = BytesIO()
+                    image.save(buffer, format='JPEG', quality=85)
+
+                    # Converter para base64
+                    img_base64 = base64.b64encode(buffer.getvalue()).decode('utf-8')
+                    current_user.foto_perfil = f"data:image/jpeg;base64,{img_base64}"
+
+                except Exception as e:
+                    flash('Erro ao processar a imagem.', 'error')
+                    return redirect(url_for('configuracoes'))
+
+            db.session.commit()
+            flash('Configurações atualizadas com sucesso!', 'success')
+
+        except Exception as e:
+            db.session.rollback()
+            flash('Erro ao salvar configurações. Tente novamente.', 'error')
+
+        return redirect(url_for('configuracoes'))
+
+    return render_template('configuracoes.html')
+
+@app.route('/configuracoes/remover-foto', methods=['POST'])
+@login_required
+def remover_foto():
+    """Remove a foto de perfil do usuário"""
+    try:
+        current_user.foto_perfil = None
+        db.session.commit()
+        flash('Foto removida com sucesso!', 'success')
+    except Exception as e:
+        db.session.rollback()
+        flash('Erro ao remover foto.', 'error')
+
+    return redirect(url_for('configuracoes'))
 
 # Função para criar tabelas e usuário admin inicial
 def create_tables():
@@ -208,6 +408,27 @@ def create_tables():
         db.session.add(admin)
         db.session.commit()
         print("Usuário admin criado: admin@hubgeo.com / admin123")
+
+    # Criar usuários de teste se não existirem
+    usuarios_teste = [
+        {'nome': 'João Silva', 'email': 'joao@hubgeo.com', 'role': 'atendente'},
+        {'nome': 'Maria Santos', 'email': 'maria@hubgeo.com', 'role': 'atendente'},
+        {'nome': 'Pedro Costa', 'email': 'pedro@hubgeo.com', 'role': 'atendente'},
+        {'nome': 'Ana Oliveira', 'email': 'ana@hubgeo.com', 'role': 'atendente'}
+    ]
+
+    for user_data in usuarios_teste:
+        if not Usuario.query.filter_by(email=user_data['email']).first():
+            user = Usuario(
+                nome=user_data['nome'],
+                email=user_data['email'],
+                role=user_data['role']
+            )
+            user.set_password('123456')
+            db.session.add(user)
+            print(f"Usuário criado: {user_data['email']} / 123456")
+
+    db.session.commit()
 
 if __name__ == '__main__':
     try:

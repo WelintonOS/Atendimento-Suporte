@@ -38,14 +38,47 @@
                     <label for="produto" class="form-label">Produto</label>
                     <select class="form-select" id="produto" name="produto">
                         <option value="">Todos os Produtos</option>
-                        <option value="Emlid" {% if produto_filter == 'Emlid' %}selected{% endif %}>Emlid</option>
-                        <option value="Geomax" {% if produto_filter == 'Geomax' %}selected{% endif %}>Geomax</option>
-                        <option value="Posição" {% if produto_filter == 'Posição' %}selected{% endif %}>Posição</option>
-                        <option value="GTOPO" {% if produto_filter == 'GTOPO' %}selected{% endif %}>GTOPO</option>
+                        <option value="Acessórios" {% if produto_filter == 'Acessórios' %}selected{% endif %}>Acessórios</option>
+                        <option value="Controladoras" {% if produto_filter == 'Controladoras' %}selected{% endif %}>Controladoras</option>
+                        <option value="Drones" {% if produto_filter == 'Drones' %}selected{% endif %}>Drones</option>
+                        <option value="Estação Total" {% if produto_filter == 'Estação Total' %}selected{% endif %}>Estação Total</option>
+                        <option value="GNSS" {% if produto_filter == 'GNSS' %}selected{% endif %}>GNSS</option>
+                        <option value="Nível" {% if produto_filter == 'Nível' %}selected{% endif %}>Nível</option>
+                        <option value="Rádio" {% if produto_filter == 'Rádio' %}selected{% endif %}>Rádio</option>
+                        <option value="Software" {% if produto_filter == 'Software' %}selected{% endif %}>Software</option>
+                        <option value="Teodolito" {% if produto_filter == 'Teodolito' %}selected{% endif %}>Teodolito</option>
+                        <option value="Outros" {% if produto_filter == 'Outros' %}selected{% endif %}>Outros</option>
                     </select>
                 </div>
 
-                <div class="col-md-3 d-flex align-items-end">
+                <div class="col-md-3">
+                    <label for="marca" class="form-label">Marca</label>
+                    <select class="form-select" id="marca" name="marca">
+                        <option value="">Todas as Marcas</option>
+                        <option value="Autel" {% if marca_filter == 'Autel' %}selected{% endif %}>Autel</option>
+                        <option value="CHCNAV" {% if marca_filter == 'CHCNAV' %}selected{% endif %}>CHCNAV</option>
+                        <option value="DJI" {% if marca_filter == 'DJI' %}selected{% endif %}>DJI</option>
+                        <option value="Emlid" {% if marca_filter == 'Emlid' %}selected{% endif %}>Emlid</option>
+                        <option value="Geomax" {% if marca_filter == 'Geomax' %}selected{% endif %}>Geomax</option>
+                        <option value="Leica" {% if marca_filter == 'Leica' %}selected{% endif %}>Leica</option>
+                        <option value="Sanding" {% if marca_filter == 'Sanding' %}selected{% endif %}>Sanding</option>
+                        <option value="Outras" {% if marca_filter == 'Outras' %}selected{% endif %}>Outras</option>
+                    </select>
+                </div>
+
+                <div class="col-md-3">
+                    <label for="usuario" class="form-label">Responsável</label>
+                    <select class="form-select" id="usuario" name="usuario">
+                        <option value="">Todos os Responsáveis</option>
+                        {% for usuario in usuarios %}
+                        <option value="{{ usuario.id }}" {% if usuario_filter == usuario.id|string %}selected{% endif %}>
+                            {{ usuario.nome }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="col-md-12 d-flex align-items-end mt-3">
                     <button type="submit" class="btn btn-outline-primary me-2">
                         <i class="bi bi-search"></i> Filtrar
                     </button>
@@ -99,6 +132,9 @@
                             </td>
                             <td>
                                 <span class="badge bg-info">{{ atendimento.produto }}</span>
+                                {% if atendimento.marca %}
+                                    <br><small class="text-muted">{{ atendimento.marca }}</small>
+                                {% endif %}
                             </td>
                             <td>
                                 {% if atendimento.forma_contato == 'Email' %}
@@ -162,7 +198,7 @@
                 <ul class="pagination justify-content-center">
                     {% if atendimentos.has_prev %}
                     <li class="page-item">
-                        <a class="page-link" href="{{ url_for('atendimentos', page=atendimentos.prev_num, status=status_filter, produto=produto_filter) }}">
+                        <a class="page-link" href="{{ url_for('atendimentos', page=atendimentos.prev_num, status=status_filter, produto=produto_filter, marca=marca_filter, usuario=usuario_filter) }}">
                             <i class="bi bi-chevron-left"></i> Anterior
                         </a>
                     </li>
@@ -172,7 +208,7 @@
                         {% if page_num %}
                             {% if page_num != atendimentos.page %}
                             <li class="page-item">
-                                <a class="page-link" href="{{ url_for('atendimentos', page=page_num, status=status_filter, produto=produto_filter) }}">
+                                <a class="page-link" href="{{ url_for('atendimentos', page=page_num, status=status_filter, produto=produto_filter, marca=marca_filter, usuario=usuario_filter) }}">
                                     {{ page_num }}
                                 </a>
                             </li>
@@ -190,7 +226,7 @@
 
                     {% if atendimentos.has_next %}
                     <li class="page-item">
-                        <a class="page-link" href="{{ url_for('atendimentos', page=atendimentos.next_num, status=status_filter, produto=produto_filter) }}">
+                        <a class="page-link" href="{{ url_for('atendimentos', page=atendimentos.next_num, status=status_filter, produto=produto_filter, marca=marca_filter, usuario=usuario_filter) }}">
                             Próxima <i class="bi bi-chevron-right"></i>
                         </a>
                     </li>
@@ -205,7 +241,7 @@
                 <i class="bi bi-inbox display-1 text-muted"></i>
                 <h4 class="mt-3 text-muted">Nenhum atendimento encontrado</h4>
                 <p class="text-muted">
-                    {% if status_filter or produto_filter %}
+                    {% if status_filter or produto_filter or marca_filter or usuario_filter %}
                     Nenhum atendimento corresponde aos filtros selecionados.
                     <br><a href="{{ url_for('atendimentos') }}" class="btn btn-outline-primary mt-2">
                         <i class="bi bi-x-circle"></i> Limpar Filtros

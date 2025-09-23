@@ -57,12 +57,34 @@
                 </ul>
 
                 <ul class="navbar-nav">
+                    <!-- Notificações -->
+                    <li class="nav-item dropdown me-3">
+                        <a class="nav-link position-relative" href="#" role="button" data-bs-toggle="dropdown" id="notificacoesDropdown">
+                            <i class="bi bi-bell"></i>
+                            <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" id="contadorNotificacoes" style="display: none;">
+                                0
+                            </span>
+                        </a>
+                        <ul class="dropdown-menu dropdown-menu-end" style="width: 350px; max-height: 400px; overflow-y: auto;">
+                            <li><h6 class="dropdown-header">Notificações</h6></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <div id="listaNotificacoes">
+                                <li><span class="dropdown-item-text text-muted">Nenhuma notificação</span></li>
+                            </div>
+                        </ul>
+                    </li>
+
                     <li class="nav-item dropdown">
                         <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
-                            <i class="bi bi-person-circle"></i> {{ current_user.nome }}
+                            {% if current_user.foto_perfil %}
+                                <img src="{{ current_user.foto_perfil }}" alt="Foto" class="rounded-circle me-1" style="width: 24px; height: 24px; object-fit: cover;">
+                            {% else %}
+                                <i class="bi bi-person-circle"></i>
+                            {% endif %}
+                            {{ current_user.nome }}
                         </a>
                         <ul class="dropdown-menu dropdown-menu-end">
-                            <li><a class="dropdown-item" href="#"><i class="bi bi-gear"></i> Configurações</a></li>
+                            <li><a class="dropdown-item" href="{{ url_for('configuracoes') }}"><i class="bi bi-gear"></i> Configurações</a></li>
                             <li><hr class="dropdown-divider"></li>
                             <li><a class="dropdown-item" href="{{ url_for('auth.logout') }}"><i class="bi bi-box-arrow-right"></i> Sair</a></li>
                         </ul>
@@ -96,7 +118,7 @@
     {% if current_user.is_authenticated %}
     <footer class="bg-light text-center text-muted py-3 mt-5">
         <div class="container">
-            <small>&copy; 2024 HUBGEO Equipamentos Topográficos - 30 Anos de Experiência</small>
+            <small>&copy; HUBGEO 2024. Todos os direitos reservados. Desenvolvido por Welinton Oliveira Silva.</small>
         </div>
     </footer>
     {% endif %}
