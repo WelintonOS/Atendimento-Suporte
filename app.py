@@ -6,8 +6,15 @@ from datetime import datetime, timedelta
 from sqlalchemy import func, desc, and_
 import os
 import base64
-from PIL import Image
 from io import BytesIO
+
+# Importar PIL de forma opcional
+try:
+    from PIL import Image
+    PILLOW_AVAILABLE = True
+except ImportError:
+    PILLOW_AVAILABLE = False
+    print("Warning: Pillow not available. Image processing will be disabled.")
 
 app = Flask(__name__, static_folder='static', static_url_path='/static')
 app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'hubgeo-sistema-atendimento-2024-secret-key-production')
@@ -346,23 +353,39 @@ def configuracoes():
                     flash('A imagem deve ter no máximo 2MB.', 'error')
                     return redirect(url_for('configuracoes'))
 
-                # Redimensionar e converter para base64
+                # Processar imagem
                 try:
-                    image = Image.open(foto)
-                    # Redimensionar para 150x150 mantendo proporção
-                    image.thumbnail((150, 150), Image.Resampling.LANCZOS)
+                    if PILLOW_AVAILABLE:
+                        # Redimensionar e converter para base64 com Pillow
+                        image = Image.open(foto)
+                        # Redimensionar para 150x150 mantendo proporção
+                        image.thumbnail((150, 150), Image.Resampling.LANCZOS)
 
-                    # Converter para RGB se necessário
-                    if image.mode != 'RGB':
-                        image = image.convert('RGB')
+                        # Converter para RGB se necessário
+                        if image.mode != 'RGB':
+                            image = image.convert('RGB')
 
-                    # Salvar em buffer como JPEG
-                    buffer = BytesIO()
-                    image.save(buffer, format='JPEG', quality=85)
+                        # Salvar em buffer como JPEG
+                        buffer = BytesIO()
+                        image.save(buffer, format='JPEG', quality=85)
+                        img_base64 = base64.b64encode(buffer.getvalue()).decode('utf-8')
+                        current_user.foto_perfil = f"data:image/jpeg;base64,{img_base64}"
+                    else:
+                        # Fallback: salvar imagem sem processamento
+                        foto.seek(0)
+                        img_data = foto.read()
+                        img_base64 = base64.b64encode(img_data).decode('utf-8')
 
-                    # Converter para base64
-                    img_base64 = base64.b64encode(buffer.getvalue()).decode('utf-8')
-                    current_user.foto_perfil = f"data:image/jpeg;base64,{img_base64}"
+                        # Determinar tipo MIME baseado na extensão
+                        filename_lower = foto.filename.lower()
+                        if filename_lower.endswith('.png'):
+                            mime_type = 'image/png'
+                        elif filename_lower.endswith(('.jpg', '.jpeg')):
+                            mime_type = 'image/jpeg'
+                        else:
+                            mime_type = 'image/jpeg'  # default
+
+                        current_user.foto_perfil = f"data:{mime_type};base64,{img_base64}"
 
                 except Exception as e:
                     flash('Erro ao processar a imagem.', 'error')
