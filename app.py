@@ -40,7 +40,7 @@ app.register_blueprint(auth_bp)
 @app.route('/')
 def index():
     if current_user.is_authenticated:
-        return redirect(url_for('dashboard'))
+        return redirect(url_for('atendimentos'))
     return redirect(url_for('auth.login'))
 
 @app.route('/dashboard')

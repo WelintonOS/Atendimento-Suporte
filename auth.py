@@ -10,7 +10,7 @@ def admin_required(f):
     def decorated_function(*args, **kwargs):
         if not current_user.is_authenticated or current_user.role != 'admin':
             flash('Acesso negado. Apenas administradores podem acessar esta página.', 'error')
-            return redirect(url_for('dashboard'))
+            return redirect(url_for('atendimentos'))
         return f(*args, **kwargs)
     return decorated_function
 
@@ -29,7 +29,7 @@ def login():
             login_user(user, remember=request.form.get('remember', False))
             next_page = request.args.get('next')
             flash(f'Bem-vindo, {user.nome}!', 'success')
-            return redirect(next_page) if next_page else redirect(url_for('dashboard'))
+            return redirect(next_page) if next_page else redirect(url_for('atendimentos'))
         else:
             flash('Email ou senha inválidos.', 'error')
 
